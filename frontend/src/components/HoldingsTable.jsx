@@ -47,18 +47,18 @@ export default function HoldingsTable({ holdings, latestDate }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col h-[460px]">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">ETF Holdings</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">As of {latestDate}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{holdings.length} constituents • As of {latestDate}</p>
       </div>
       
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1">
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
             <tr>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 bg-gray-50 dark:bg-gray-700"
                 onClick={() => handleSort('name')}
               >
                 <div className="flex items-center">

@@ -46,15 +46,15 @@ export default function TopHoldingsChart({ data, latestDate, darkMode }) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden flex flex-col h-[460px]">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Top 5 Holdings by Value</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Holding value = Weight × Price • As of {latestDate}
         </p>
       </div>
       
-      <div className="p-4 h-80">
+      <div className="p-4 flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

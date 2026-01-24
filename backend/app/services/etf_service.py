@@ -59,20 +59,94 @@ class ETFService:
         - name: Constituent identifier (A, B, C, etc.)
         - weight: Decimal weight (e.g., 0.15 for 15%)
         """
-        self.current_etf_weights = pd.read_csv(io.BytesIO(csv_content))
+        try:
+            df = pd.read_csv(io.BytesIO(csv_content))
+        except pd.errors.EmptyDataError:
+            raise ValueError("CSV file is empty or contains no data")
+        except pd.errors.ParserError as e:
+            raise ValueError(f"Invalid CSV format: {str(e)}")
+        
+        # Validate required columns exist
+        required_columns = {'name', 'weight'}
+        actual_columns = set(df.columns.str.lower().str.strip())
+        
+        # Normalize column names (case-insensitive)
+        df.columns = df.columns.str.lower().str.strip()
+        
+        missing_columns = required_columns - actual_columns
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}. CSV must have 'name' and 'weight' columns.")
+        
+        # Remove any completely empty rows
+        df = df.dropna(how='all')
+        
+        # Validate we have at least one holding
+        if len(df) == 0:
+            raise ValueError("CSV contains no holdings data")
+        
+        # Validate 'name' column
+        if df['name'].isna().any():
+            raise ValueError("'name' column contains empty values")
+        
+        # Check for duplicate constituents
+        duplicates = df['name'].duplicated()
+        if duplicates.any():
+            dup_names = df.loc[duplicates, 'name'].tolist()
+            raise ValueError(f"Duplicate constituent names found: {dup_names}")
+        
+        # Validate 'weight' column - must be numeric
+        if df['weight'].isna().any():
+            raise ValueError("'weight' column contains empty values")
+        
+        try:
+            df['weight'] = pd.to_numeric(df['weight'])
+        except (ValueError, TypeError):
+            raise ValueError("'weight' column must contain numeric values")
+        
+        # Validate weight values are reasonable
+        if (df['weight'] < 0).any():
+            raise ValueError("Weights cannot be negative")
+        
+        if (df['weight'] > 1).any():
+            raise ValueError("Weights should be decimal values (e.g., 0.15 for 15%), not percentages. Found values > 1.")
+        
+        if (df['weight'] == 0).all():
+            raise ValueError("All weights are zero")
+        
+        total_weight = df['weight'].sum()
+        if total_weight <= 0:
+            raise ValueError("Total weight must be greater than zero")
+        
+        # Warn if weights don't sum to approximately 1 (allow 0.001 tolerance)
+        # This is a soft validation - we still accept it
+        weight_warning = None
+        if abs(total_weight - 1.0) > 0.01:
+            weight_warning = f"Weights sum to {total_weight:.4f}, not 1.0"
         
         # Validate that all constituents exist in price data
         available_tickers = set(self.prices_df.columns) - {'DATE'}
-        etf_tickers = set(self.current_etf_weights['name'].values)
+        etf_tickers = set(df['name'].values)
         missing = etf_tickers - available_tickers
         
         if missing:
-            raise ValueError(f"Constituents not found in price data: {missing}")
+            raise ValueError(f"Constituents not found in price data: {sorted(missing)}. Available: {sorted(available_tickers)}")
         
-        return {
+        # Limit number of holdings (sanity check)
+        if len(df) > 1000:
+            raise ValueError(f"Too many holdings ({len(df)}). Maximum allowed is 1000.")
+        
+        # All validations passed - store the weights
+        self.current_etf_weights = df
+        
+        result = {
             "constituents": len(self.current_etf_weights),
-            "total_weight": float(self.current_etf_weights['weight'].sum())
+            "total_weight": float(total_weight)
         }
+        
+        if weight_warning:
+            result["warning"] = weight_warning
+        
+        return result
     
     def get_holdings_table(self) -> list[dict]:
         """

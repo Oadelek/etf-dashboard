@@ -53,6 +53,10 @@ async def root():
     }
 
 
+# Maximum file size: 1MB
+MAX_FILE_SIZE = 1 * 1024 * 1024
+
+
 @app.post("/api/upload")
 async def upload_etf(file: UploadFile = File(...)):
     """
@@ -64,11 +68,33 @@ async def upload_etf(file: UploadFile = File(...)):
     
     Returns summary of uploaded ETF and all dashboard data.
     """
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="File must be a CSV")
+    # Validate file extension
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    
+    if not file.filename.lower().endswith('.csv'):
+        raise HTTPException(status_code=400, detail="File must be a CSV file")
+    
+    # Validate content type (if provided)
+    if file.content_type and file.content_type not in ['text/csv', 'application/csv', 'application/vnd.ms-excel', 'text/plain']:
+        raise HTTPException(status_code=400, detail=f"Invalid content type: {file.content_type}. Expected CSV.")
     
     try:
         content = await file.read()
+        
+        # Validate file size
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="File is empty")
+        
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail=f"File too large. Maximum size is {MAX_FILE_SIZE // 1024}KB")
+        
+        # Validate file is valid UTF-8
+        try:
+            content.decode('utf-8')
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="File must be valid UTF-8 encoded text")
+        
         summary = etf_service.load_etf_weights(content)
         
         # Return all data needed for the dashboard in one response
@@ -82,6 +108,8 @@ async def upload_etf(file: UploadFile = File(...)):
             "top_holdings": etf_service.get_top_holdings(5),
             "latest_date": etf_service.get_latest_date()
         }
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

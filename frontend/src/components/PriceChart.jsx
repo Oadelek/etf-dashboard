@@ -161,6 +161,8 @@ export default function PriceChart({ data, darkMode }) {
               stroke={textColor}
               axisLine={false}
               tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={50}
             />
             <YAxis 
               domain={[minPrice - padding, maxPrice + padding]}
@@ -170,6 +172,7 @@ export default function PriceChart({ data, darkMode }) {
               axisLine={false}
               tickLine={false}
               width={60}
+              tickCount={5}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area

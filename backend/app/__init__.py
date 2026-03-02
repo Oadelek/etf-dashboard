@@ -1,1 +1,1 @@
-# ETF Dashboard Backend
+# Spectra — ETF Analytics Engine

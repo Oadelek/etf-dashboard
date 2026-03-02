@@ -37,13 +37,27 @@ class ETFService:
         """
         Load price data from CSV and parse dates.
         
-        The prices CSV is expected to have:
-        - First column: DATE (YYYY-MM-DD format)
-        - Remaining columns: Constituent tickers (A, B, C, etc.)
+        Supports two formats:
+        - Wide format: DATE, A, B, C, ... (legacy)
+        - Long format: date, ticker, open, high, low, close, volume (new)
+        
+        Always returns wide format for calculations.
         """
-        df = pd.read_csv(csv_path, parse_dates=['DATE'])
-        df = df.sort_values('DATE').reset_index(drop=True)
-        return df
+        df = pd.read_csv(csv_path)
+        
+        # Detect format: long (has 'ticker' column) vs wide (columns are tickers)
+        if 'ticker' in df.columns:
+            # Long format → pivot to wide on close price
+            df['date'] = pd.to_datetime(df['date'])
+            wide = df.pivot(index='date', columns='ticker', values='close').reset_index()
+            wide = wide.rename(columns={'date': 'DATE'})
+            wide = wide.sort_values('DATE').reset_index(drop=True)
+            return wide
+        else:
+            # Legacy wide format
+            df['DATE'] = pd.to_datetime(df['DATE'])
+            df = df.sort_values('DATE').reset_index(drop=True)
+            return df
     
     def load_etf_weights(self, csv_content: bytes) -> dict:
         """
@@ -66,12 +80,16 @@ class ETFService:
         except pd.errors.ParserError as e:
             raise ValueError(f"Invalid CSV format: {str(e)}")
         
-        # Validate required columns exist
-        required_columns = {'name', 'weight'}
-        actual_columns = set(df.columns.str.lower().str.strip())
-        
         # Normalize column names (case-insensitive)
         df.columns = df.columns.str.lower().str.strip()
+        
+        # Support both 'name' and 'ticker' as the identifier column
+        if 'ticker' in df.columns and 'name' not in df.columns:
+            df = df.rename(columns={'ticker': 'name'})
+        
+        # Validate required columns exist
+        required_columns = {'name', 'weight'}
+        actual_columns = set(df.columns)
         
         missing_columns = required_columns - actual_columns
         if missing_columns:

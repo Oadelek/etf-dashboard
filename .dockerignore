@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+node_modules
+.env
+*.db
+data/spark_output
+backend/venv
+frontend/dist
+README.md

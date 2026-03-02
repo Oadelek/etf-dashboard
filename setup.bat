@@ -1,9 +1,9 @@
 @echo off
-REM ETF Dashboard - Quick Setup Script (Windows)
+REM Spectra — Quick Setup Script (Windows)
 REM Run this once after cloning to set up both backend and frontend
 
 echo.
-echo Setting up ETF Dashboard...
+echo Setting up Spectra...
 echo.
 
 REM Check for Python

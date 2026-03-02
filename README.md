@@ -1,10 +1,12 @@
-# ETF Dashboard
+# Spectra — ETF Analytics Engine
 
-A web app for viewing historical prices of uploaded ETFs. Upload a CSV with stock weights, and it shows you a price chart, holdings table, and top holdings breakdown.
+A full-stack data engineering platform for ingesting, transforming, and analyzing Exchange-Traded Fund data. Demonstrates the complete data lifecycle: **ingestion → ETL → storage → SQL analytics → visualization**, with both batch and incremental pipelines, pluggable data sources, and a multi-page React dashboard.
+
+**Tech stack:** Python · FastAPI · Pandas · PySpark · SQLAlchemy · SQLite · React 18 · Vite · Recharts · Tailwind CSS · Docker
 
 ---
 
-## Quick Setup
+## Quick Start
 
 **Prerequisites:** Python 3.11+, Node.js 18+
 
@@ -20,178 +22,284 @@ setup.bat
 chmod +x setup.sh && ./setup.sh
 ```
 
-Then start both servers (in separate terminals):
+Start both servers:
 
 ```bash
-# Terminal 1 - Backend
+# Terminal 1 — Backend API
 cd backend
-venv\Scripts\activate      # Windows
-# source venv/bin/activate  # Mac/Linux
+venv\Scripts\activate      # Windows (or source venv/bin/activate on Mac/Linux)
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2 - Frontend
+# Terminal 2 — Frontend
 cd frontend
 npm run dev
 ```
 
-Open http://localhost:5173 and upload one of the sample ETF files from `/data`.
+Open **http://localhost:5173** — you'll see the Spectra dashboard with live data.
 
----
+### Load the Database (first time)
 
-## How It Works
-
-### The Data
-
-There are two types of CSV files:
-
-1. **Price data** (`prices.csv`) - Historical daily prices for stocks A through Z. This is loaded once when the backend starts. Think of it as "all the stocks that exist in this universe."
-
-2. **ETF weights** (what you upload) - Defines which stocks are in your ETF and how much of each:
-   ```csv
-   name,weight
-   M,0.30
-   S,0.25
-   W,0.25
-   G,0.20
-   ```
-   This ETF holds 4 stocks with weights that sum to 1.0 (100%).
-
-### The Calculation
-
-ETF price on any given day = weighted sum of constituent prices
-
-```
-ETF_price = (0.30 × M_price) + (0.25 × S_price) + (0.25 × W_price) + (0.20 × G_price)
+```bash
+cd backend && venv\Scripts\activate
+python -m pipeline.etl --fresh
 ```
 
-This is done for every day in the price history, giving us a time series to chart.
+This runs the batch ETL pipeline: generates 50 S&P 500 tickers × 5 years of OHLCV data → validates → loads into SQLite. Takes ~30 seconds, produces **90,000+ price records**.
 
 ---
 
-## Why I Picked These Technologies
+## Architecture
 
-### Frontend: React + Vite + Recharts + Tailwind
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     FRONTEND  (React 18)                        │
+│  Vite · Tailwind · Recharts · React Router 6                   │
+│  Pages: Overview │ ETF Explorer │ Analytics │ Pipeline │ Upload │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ HTTP (Axios)
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     BACKEND  (FastAPI)                           │
+│  V1 API (in-memory Pandas)  ·  V2 API (SQL-powered)            │
+│  Ingestion API (pipeline monitoring)                            │
+│  Services: etf_service.py (Pandas) · db_service.py (raw SQL)   │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │ SQLAlchemy
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     DATABASE  (SQLite)                           │
+│  etf_uploads · constituents · prices  (3NF normalized)          │
+│  50 tickers · 90,000+ OHLCV records · 5 ETFs · 92 holdings     │
+└─────────────────────▲───────────────────────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────────────────────┐
+│                     DATA PIPELINE                                │
+│  Batch ETL (etl.py) · Incremental ETL (daily_feed + incr_etl)  │
+│  PySpark Analytics (spark_analysis.py)                          │
+│  Pluggable sources: Simulator · YFinance · CSV                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-**React** - React has better options for charting libraries and the component model clicked for this dashboard layout.
+### Database Schema (Star-Schema-Lite)
 
-**Vite** - Way faster than Create React App. Hot reload is basically instant which matters when tweaking chart styling.
-
-**Recharts** - Built specifically for React. Has zoom/brush components out of the box. Tried D3 first but Recharts was simpler for standard charts.
-
-**Tailwind** - I wasn't sure at first ("utility classes look ugly") but it's actually great for prototyping. No context-switching to CSS files.
-
-### Backend: Python + FastAPI + Pandas
-
-**Python + Pandas** - The weighted price calculation is literally one line in pandas. Doing matrix math in JavaScript would be painful and slow.
-
-**FastAPI** - Modern Python web framework. Gives you automatic API docs at `/docs`, good type hints, and async support. Flask would work too but FastAPI feels cleaner.
-
-### The Alternative I Considered
-
-Could have done everything client-side with PapaParse (CSV parsing) and math in JS. But:
-- File uploads are easier to validate server-side
-- Pandas is much faster for the calculations
-- Wanted to show full-stack ability
+| Table | Role | Key Columns |
+|-------|------|-------------|
+| `etf_uploads` | Source tracking dim | id, filename, uploaded_at, is_active |
+| `constituents` | Dimension table | id, etf_id (FK), ticker, company_name, sector, industry, weight |
+| `prices` | Fact table (90K+ rows) | id, constituent_id (FK), date, open/high/low/close_price, volume |
 
 ---
 
-## Assumptions I Made
+## Data Pipeline
 
-1. **The price data is static** - It's loaded once at startup. No live feeds or WebSocket updates.
+### Batch ETL (`pipeline/etl.py`)
 
-2. **ETF weights should sum to ~1.0** - The app warns if they don't, but still works. Real ETFs might have small rounding differences.
+Full initial load — generates realistic financial data and bootstraps the database:
 
-3. **All tickers in the ETF must exist in the price data** - If you upload an ETF with ticker "ZZZ" that doesn't exist, it'll reject it with a helpful error.
+```
+generate_data.py → 50 S&P 500 tickers, 5 ETF portfolios, 5 years of OHLCV
+        │
+        ▼
+   etl.py → Validate schema → Map tickers to sectors → Dedup
+        │
+        ▼
+   SQLite DB → etf_uploads + constituents + prices tables
+```
 
-4. **No authentication** - This is a demo. In production you'd add auth, especially for file uploads.
+```bash
+python -m pipeline.etl              # Normal run
+python -m pipeline.etl --fresh      # Drop & recreate all tables
+python -m pipeline.etl --etf tech   # Load specific ETF only
+```
 
-5. **In-memory state** - The uploaded ETF is stored in server memory. Restarting the backend clears it. A real app would use a database or session storage.
+### Incremental Pipeline (`pipeline/daily_feed.py` + `pipeline/incremental_etl.py`)
 
-6. **All dates are trading days** - No logic to skip weekends/holidays. The sample data only has weekdays anyway.
+Production-style daily ingestion with watermark tracking:
+
+```
+DataProvider (pluggable) → Landing Zone (CSV files)
+                                    │
+                              incremental_etl.py
+                                    │
+                    Validate → Watermark check → Dedup → Load → Archive
+```
+
+**Pluggable Data Source Pattern (Strategy Pattern):**
+
+```python
+class DataProvider(ABC):
+    @abstractmethod
+    def fetch(self, tickers, start_date, end_date) -> pd.DataFrame
+
+class SimulatorProvider(DataProvider)   # Synthetic OHLCV for testing
+class YFinanceProvider(DataProvider)    # Real market data via yfinance
+class CSVProvider(DataProvider)         # Read from CSV files
+```
+
+```bash
+python -m pipeline.daily_feed --provider simulator  # Generate synthetic data
+python -m pipeline.incremental_etl                   # Load from landing zone
+python -m pipeline.scheduler                         # Run both in sequence
+```
+
+### PySpark Analytics (`pipeline/spark_analysis.py`)
+
+Distributed analytics on the price dataset:
+
+- Moving averages (5-day, 20-day window functions)
+- Daily returns & volatility ranking
+- Performance ranking (total return via ROW_NUMBER)
+- Volume spike detection (>2× 20-day average)
+- Sector-level aggregation (JOIN + GROUP BY)
+- Price correlation matrix (pivot + pairwise stat.corr)
+
+```bash
+python -m pipeline.spark_analysis
+```
+
+---
+
+## API Reference
+
+### V1 — In-Memory (Pandas)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Health check |
+| `/api/upload` | POST | Upload ETF CSV → instant Pandas analysis |
+| `/api/holdings` | GET | Holdings with latest prices |
+| `/api/etf-prices` | GET | Reconstructed ETF price series |
+| `/api/top-holdings` | GET | Top N holdings by value |
+
+### V2 — SQL-Powered (Database)
+
+| Endpoint | Method | SQL Concepts |
+|----------|--------|--------------|
+| `/api/v2/db-stats` | GET | COUNT, aggregate functions |
+| `/api/v2/etfs` | GET | JOIN, subquery |
+| `/api/v2/etfs/{id}/holdings` | GET | JOIN + correlated subquery (latest prices) |
+| `/api/v2/etfs/{id}/prices` | GET | CTE + window function (weighted sum) |
+| `/api/v2/etfs/{id}/top-holdings` | GET | ORDER BY + LIMIT |
+| `/api/v2/etfs/{id}/best-worst-days` | GET | LAG() window function |
+| `/api/v2/analytics/moving-averages` | GET | AVG() OVER (ROWS BETWEEN) |
+| `/api/v2/analytics/ohlcv-data` | GET | Multi-table JOIN |
+| `/api/v2/analytics/correlation` | GET | Self-JOIN on date |
+| `/api/v2/analytics/sector-breakdown` | GET | GROUP BY + aggregate |
+| `/api/v2/analytics/volume-leaders` | GET | GROUP BY + multiple aggs |
+| `/api/v2/analytics/price-summary` | GET | Full statistics per ticker |
+
+### Ingestion Monitoring
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v2/ingestion/status` | GET | Pipeline health, watermarks, lag detection |
+| `/api/v2/ingestion/run` | POST | Trigger incremental pipeline |
+
+---
+
+## Frontend — 5 Dashboard Pages
+
+| Page | Route | What It Shows |
+|------|-------|---------------|
+| **Overview** | `/` | KPI cards, sector pie chart, volume leaders, data freshness |
+| **ETF Explorer** | `/etfs` | ETF selector, price time series, holdings table, best/worst days |
+| **Analytics** | `/analytics` | Moving averages, OHLCV candles, correlation analysis, price summary |
+| **Pipeline** | `/pipeline` | Health status, ingestion stats, architecture diagram, watermark table |
+| **Upload** | `/upload` | V1 upload flow — drop a CSV, get instant analysis |
+
+Sidebar navigation with dark mode toggle and collapsible layout.
+
+---
+
+## Testing
+
+43 automated tests covering API endpoints, services, and data validation:
+
+```bash
+cd backend
+venv\Scripts\activate
+python -m pytest tests/ -v
+```
+
+---
+
+## Docker
+
+```bash
+docker-compose up --build
+```
+
+Runs three containers:
+- **backend** — Python 3.11 + FastAPI + uvicorn
+- **frontend** — Node 18 + Vite build → served via nginx
+- **nginx** — Reverse proxy (`/api` → backend, `/` → frontend)
 
 ---
 
 ## Project Structure
 
 ```
-etf-dashboard/
+spectra/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # API routes
+│   │   ├── main.py                 # FastAPI routes (V1 + V2 + Ingestion)
+│   │   ├── database.py             # SQLAlchemy models & schema
 │   │   └── services/
-│   │       └── etf_service.py   # All the business logic
+│   │       ├── etf_service.py      # Pandas-based analytics (V1)
+│   │       └── db_service.py       # SQL-based analytics (V2) — 15+ queries
+│   ├── tests/                      # 43 pytest tests
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
+│   │   ├── App.jsx                 # Router + layout
 │   │   ├── components/
-│   │   │   ├── FileUpload.jsx      # Drag-drop upload
+│   │   │   ├── Sidebar.jsx         # Navigation + dark mode
+│   │   │   ├── StatsCard.jsx       # Reusable KPI card
+│   │   │   ├── FileUpload.jsx      # Drag-drop CSV upload
 │   │   │   ├── HoldingsTable.jsx   # Sortable table
 │   │   │   ├── PriceChart.jsx      # Time series with zoom
 │   │   │   └── TopHoldingsChart.jsx
-│   │   └── App.jsx
+│   │   └── pages/
+│   │       ├── OverviewPage.jsx    # Dashboard overview
+│   │       ├── ETFExplorerPage.jsx # ETF deep-dive
+│   │       ├── AnalyticsPage.jsx   # SQL analytics explorer
+│   │       ├── PipelinePage.jsx    # Pipeline monitoring
+│   │       └── UploadPage.jsx      # V1 upload flow
 │   └── package.json
-├── data/                        # Sample CSVs to test with
-├── setup.sh                     # One-command setup (Mac/Linux)
-├── setup.bat                    # One-command setup (Windows)
+├── pipeline/
+│   ├── etl.py                      # Batch ETL pipeline
+│   ├── daily_feed.py               # Pluggable data providers
+│   ├── incremental_etl.py          # Watermark-based incremental load
+│   ├── scheduler.py                # Pipeline orchestrator
+│   ├── generate_data.py            # Realistic S&P 500 data generator
+│   └── spark_analysis.py           # PySpark analytics (7 analyses)
+├── data/                           # CSVs + SQLite database
+├── docker-compose.yml
+├── setup.sh / setup.bat
 └── README.md
 ```
 
 ---
 
-## API Endpoints
+## Key SQL Patterns Demonstrated
 
-| Endpoint | Method | What it does |
-|----------|--------|--------------|
-| `/` | GET | Health check |
-| `/api/upload` | POST | Upload ETF CSV → returns all dashboard data |
-| `/api/holdings` | GET | Current holdings with latest prices |
-| `/api/etf-prices` | GET | Time series for the chart |
-| `/api/top-holdings` | GET | Top 5 by value |
-
-The `/api/upload` endpoint returns everything at once so the frontend only needs one API call after upload.
-
----
-
-## Validation
-
-The backend validates uploads pretty thoroughly:
-
-- File must be CSV, under 1MB, valid UTF-8
-- Must have `name` and `weight` columns (case-insensitive)
-- No duplicate tickers
-- Weights must be numeric, non-negative, ≤ 1.0
-- All tickers must exist in the price data
-- Warns (but allows) if weights don't sum to 1.0
+| Pattern | Where Used | Example |
+|---------|-----------|---------|
+| **Window Functions** | Moving averages, best/worst days | `AVG(price) OVER (ROWS BETWEEN 19 PRECEDING AND CURRENT ROW)` |
+| **LAG()** | Daily returns | `LAG(price) OVER (ORDER BY date)` |
+| **ROW_NUMBER()** | Latest price per ticker | `ROW_NUMBER() OVER (PARTITION BY constituent_id ORDER BY date DESC)` |
+| **CTEs** | ETF price series | `WITH daily_prices AS (...) SELECT ...` |
+| **Self-JOIN** | Correlation analysis | `prices p1 JOIN prices p2 ON p1.date = p2.date` |
+| **Subqueries** | Holdings with latest price | `WHERE date = (SELECT MAX(date) ...)` |
+| **GROUP BY + HAVING** | Sector breakdown | `GROUP BY sector HAVING COUNT(*) > 1` |
 
 ---
 
-## Features
+## What I'd Add Next
 
-- **Dark mode** - Toggle in header, remembers your preference
-- **Time range selector** - 1W / 1M / 3M / ALL buttons on the chart
-- **Zoom** - Brush at bottom of chart to zoom into a date range
-- **Dynamic chart color** - Green if price went up over the selected period, red if down
-- **Sortable table** - Click column headers to sort holdings
-- **Responsive** - Works on mobile (header stacks, table scrolls)
-
----
-
-## Sample Files
-
-The `/data` folder has files to test with:
-
-- `bankofmontreal-e134q-1arsjzss-prices.csv` - Price history for stocks A-Z
-- `bankofmontreal-e134q-5osaq2zk-ETF1.csv` - Sample ETF with 15 holdings
-- `bankofmontreal-e134q-tf6omf1g-ETF2.csv` - Another sample ETF
-
----
-
-## What I'd Add With More Time
-
-- [ ] Multiple ETF comparison (overlay charts)
-- [ ] Constituent breakdown chart (pie chart of weights)
-- [ ] Export functionality (download chart as PNG, data as CSV)
-- [ ] Date range picker (calendar UI instead of just buttons)
-- [ ] Real ticker symbols instead of A-Z
-- [ ] Unit tests for edge cases
-- [ ] Docker compose for easier deployment
+- [ ] WebSocket for real-time pipeline status updates
+- [ ] PostgreSQL support (swap SQLAlchemy connection string)
+- [ ] Airflow DAG definitions for production scheduling
+- [ ] dbt models for transformation layer
+- [ ] Grafana dashboard for pipeline metrics
+- [ ] CI/CD pipeline with GitHub Actions

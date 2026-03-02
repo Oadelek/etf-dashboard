@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ETF Dashboard - Quick Setup Script
+# Spectra — Quick Setup Script
 # Run this once after cloning to set up both backend and frontend
 
 set -e  # Exit on any error
 
-echo "Setting up ETF Dashboard..."
+echo "Setting up Spectra..."
 echo ""
 
 # Check prerequisites

@@ -1,0 +1,51 @@
+ticker,name,sector,industry,market_cap
+AAPL,Apple Inc.,Technology,Consumer Electronics,Large
+MSFT,Microsoft Corp.,Technology,Software,Large
+NVDA,NVIDIA Corp.,Technology,Semiconductors,Large
+GOOGL,Alphabet Inc.,Technology,Internet Services,Large
+META,Meta Platforms Inc.,Technology,Social Media,Large
+AMZN,Amazon.com Inc.,Technology,E-Commerce,Large
+CRM,Salesforce Inc.,Technology,Cloud Computing,Large
+ORCL,Oracle Corp.,Technology,Enterprise Software,Large
+ADBE,Adobe Inc.,Technology,Software,Large
+INTC,Intel Corp.,Technology,Semiconductors,Large
+JNJ,Johnson & Johnson,Healthcare,Pharmaceuticals,Large
+UNH,UnitedHealth Group,Healthcare,Health Insurance,Large
+PFE,Pfizer Inc.,Healthcare,Pharmaceuticals,Large
+ABBV,AbbVie Inc.,Healthcare,Biotechnology,Large
+MRK,Merck & Co.,Healthcare,Pharmaceuticals,Large
+TMO,Thermo Fisher Scientific,Healthcare,Life Sciences,Large
+JPM,JPMorgan Chase & Co.,Financials,Banking,Large
+BAC,Bank of America Corp.,Financials,Banking,Large
+GS,Goldman Sachs Group,Financials,Investment Banking,Large
+MS,Morgan Stanley,Financials,Investment Banking,Large
+BLK,BlackRock Inc.,Financials,Asset Management,Large
+V,Visa Inc.,Financials,Payments,Large
+PG,Procter & Gamble Co.,Consumer Staples,Household Products,Large
+KO,Coca-Cola Co.,Consumer Staples,Beverages,Large
+PEP,PepsiCo Inc.,Consumer Staples,Beverages,Large
+COST,Costco Wholesale,Consumer Staples,Retail,Large
+WMT,Walmart Inc.,Consumer Staples,Retail,Large
+MCD,McDonald's Corp.,Consumer Disc.,Restaurants,Large
+NKE,Nike Inc.,Consumer Disc.,Apparel,Large
+SBUX,Starbucks Corp.,Consumer Disc.,Restaurants,Large
+XOM,Exxon Mobil Corp.,Energy,Oil & Gas,Large
+CVX,Chevron Corp.,Energy,Oil & Gas,Large
+COP,ConocoPhillips,Energy,Oil & Gas,Large
+SLB,Schlumberger Ltd.,Energy,Oilfield Services,Large
+CAT,Caterpillar Inc.,Industrials,Machinery,Large
+BA,Boeing Co.,Industrials,Aerospace,Large
+UNP,Union Pacific Corp.,Industrials,Railroads,Large
+HON,Honeywell International,Industrials,Conglomerates,Large
+DE,Deere & Company,Industrials,Machinery,Large
+AMT,American Tower Corp.,Real Estate,REITs,Large
+NEE,NextEra Energy Inc.,Utilities,Electric Utilities,Large
+DUK,Duke Energy Corp.,Utilities,Electric Utilities,Large
+SO,Southern Company,Utilities,Electric Utilities,Large
+LIN,Linde plc,Materials,Chemicals,Large
+APD,Air Products & Chemicals,Materials,Chemicals,Large
+DIS,Walt Disney Co.,Communication,Entertainment,Large
+NFLX,Netflix Inc.,Communication,Streaming,Large
+T,AT&T Inc.,Communication,Telecom,Large
+TMUS,T-Mobile US Inc.,Communication,Telecom,Large
+PYPL,PayPal Holdings Inc.,Technology,Fintech,Large

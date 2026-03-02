@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies first (leverages Docker layer caching)
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy application code
+COPY backend/ ./backend/
+COPY pipeline/ ./pipeline/
+COPY data/ ./data/
+
+# Set Python path so imports work
+ENV PYTHONPATH=/app
+
+# Run ETL pipeline to populate the database
+RUN python -m pipeline.etl
+
+EXPOSE 8000
+
+# Start the FastAPI server
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

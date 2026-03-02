@@ -1,0 +1,236 @@
+
+
+🔵 SECTION 1 
+
+About Yourself
+	1.	Walk me through your experience.
+	2.	Walk me through your experience with data pipelines and data engineering.
+	3.	Describe a complex full stack project you led end-to-end.
+	4.	Tell me about a technically challenging system you built.
+	5.	How have you worked with data scientists?
+	6.	How have you mentored junior developers?
+	7.	Why this role?
+	8.	Why leave your current team?
+	9.	What differentiates you as a lead engineer?
+
+👉 Practice until this sounds natural and structured (2–3 minutes max).
+
+⸻
+
+🔵 SECTION 2 — Data Engineering & Big Data (High Priority)
+
+Core Concepts
+	1.	What is a data pipeline?
+	2.	Batch vs streaming processing?
+	3.	What is ETL vs ELT?
+	4.	What is data lineage?
+	5.	How do you ensure data quality?
+	6.	How do you handle schema evolution?
+	7.	What causes bottlenecks in pipelines?
+	8.	How do you monitor pipelines?
+
+Hadoop / Spark
+	9.	How does Hadoop work?
+	10.	What is HDFS?
+	11.	What is Spark architecture?
+	12.	RDD vs DataFrame?
+	13.	What is shuffle?
+	14.	How does Spark achieve fault tolerance?
+	15.	What causes data skew?
+	16.	How do you optimize Spark jobs?
+	17.	When would you use Spark over Pandas?
+
+SQL & Data Modeling
+	18.	Explain indexing.
+	19.	Clustered vs non-clustered index?
+	20.	Normalization vs denormalization?
+	21.	Write query for second highest salary.
+	22.	Explain window functions.
+	23.	How do you optimize slow queries?
+	24.	How would you design a scalable analytics schema?
+
+Collaboration With Data Scientists
+	25.	How have you supported feature engineering?
+	26.	How do you productionize ML features?
+	27.	How do you manage training vs inference pipelines?
+	28.	How do you handle data governance and security?
+
+⸻
+
+🔵 SECTION 3 — Backend & APIs
+
+API Design
+	1.	What is REST?
+	2.	REST vs GraphQL?
+	3.	How do you design a REST API?
+	4.	What is idempotency?
+	5.	How do you version APIs?
+	6.	How do you secure APIs?
+	7.	What is CORS?
+	8.	What is JWT?
+	9.	OAuth2 flow?
+
+Microservices
+	10.	Walk me through a microservices architecture you’ve built.
+	11.	How do services communicate?
+	12.	What is service discovery?
+	13.	What is circuit breaker pattern?
+	14.	How do you handle failures between services?
+	15.	Monolith vs microservices trade-offs?
+
+Framework Experience
+	16.	Experience with Flask, Django, FastAPI?
+	17.	Experience with Node.js?
+	18.	How would you structure a production-ready API?
+	19.	How do you manage configuration and secrets?
+	20.	What is dependency injection?
+
+⸻
+
+🔵 SECTION 4 — Distributed Systems & Event-Driven
+	1.	What is CAP theorem?
+	2.	Eventual consistency?
+	3.	What is a message queue?
+	4.	Kafka vs RabbitMQ?
+	5.	What is pub/sub?
+	6.	What is backpressure?
+	7.	What is horizontal vs vertical scaling?
+	8.	What causes race conditions?
+	9.	How do you design for high availability?
+	10.	What happens when a node fails?
+	11.	How do you handle asynchronous programming?
+	12.	Explain event loop.
+	13.	What is a promise?
+	14.	What is event-driven architecture?
+
+⸻
+
+🔵 SECTION 5 — Frontend
+
+Frameworks
+	1.	Differences between React, Angular, Vue?
+	2.	Which do you prefer and why?
+	3.	What is virtual DOM?
+	4.	What are hooks?
+	5.	Component lifecycle?
+	6.	State management strategies?
+
+Performance
+	7.	What causes re-renders?
+	8.	How do you optimize frontend performance?
+	9.	Lazy loading?
+	10.	Code splitting?
+
+UX & Compatibility
+	11.	How do you ensure cross-browser compatibility?
+	12.	How do you ensure mobile responsiveness?
+	13.	Experience with Figma or Balsamiq?
+	14.	Accessibility considerations?
+
+⸻
+
+🔵 SECTION 6 — DevOps & Cloud
+
+Docker
+	1.	What is a container?
+	2.	VM vs container?
+	3.	Multi-stage builds?
+	4.	How to reduce Docker image size?
+
+Kubernetes / OpenShift / PCF
+	5.	What is a pod?
+	6.	Deployment vs StatefulSet?
+	7.	How does scaling work?
+	8.	How are secrets handled?
+	9.	What is OpenShift?
+	10.	Experience with PCF?
+
+CI/CD & Automation
+	11.	How have you used GitHub Actions?
+	12.	What happens in a CI pipeline?
+	13.	Blue-green vs rolling deployment?
+	14.	What is Airflow?
+	15.	What is a DAG?
+	16.	How do you retry failed tasks?
+	17.	Experience with ServiceNow?
+
+⸻
+
+🔵 SECTION 7 — System Design (Expect 1 Big Question)
+
+Prepare to design:
+	•	A scalable data ingestion system
+	•	Real-time analytics pipeline
+	•	API serving millions of users
+	•	ML feature platform
+
+Practice this structure:
+	1.	Clarify requirements
+	2.	Define functional requirements
+	3.	Define non-functional requirements (scale, latency, availability)
+	4.	High-level architecture
+	5.	Storage decisions
+	6.	Compute layer
+	7.	Caching strategy
+	8.	Failure handling
+	9.	Monitoring
+	10.	Trade-offs
+
+⸻
+
+🔵 SECTION 8 — Performance & Optimization
+	1.	How do you optimize applications for speed?
+	2.	How do you profile bottlenecks?
+	3.	Caching strategies?
+	4.	CDN usage?
+	5.	Database connection pooling?
+	6.	Thread pools?
+	7.	Load balancing strategies?
+
+⸻
+
+🔵 SECTION 9 — Leadership & Behavioral
+	1.	How have you mentored juniors?
+	2.	How do you conduct code reviews?
+	3.	How do you handle disagreements?
+	4.	Describe a production incident.
+	5.	How do you prioritize work?
+	6.	How do you deal with ambiguity?
+	7.	Tell me about improving system performance.
+	8.	How do you enforce coding standards?
+	9.	How do you lead architectural decisions?
+
+Use STAR format.
+
+⸻
+
+🔵 SECTION 10 — Questions To Ask Them
+	1.	What does the current data platform stack look like?
+	2.	How closely do you collaborate with data scientists?
+	3.	What does success look like in 90 days?
+	4.	Team structure?
+	5.	Biggest technical challenge right now?
+	6.	What does “lead” mean here technically vs people management?
+
+⸻
+
+🧠 How To Practice Effectively
+
+Step 1 – Today
+	•	Master your 2-minute intro.
+	•	Review Spark + data pipeline architecture deeply.
+	•	Practice 1 system design scenario.
+
+Step 2 – Drill
+
+Answer questions out loud:
+	•	No notes.
+	•	Structured answers.
+	•	Concise but deep.
+
+Step 3 – Simulate
+
+Time yourself:
+	•	45-minute mock interview.
+	•	Mix system design + backend + leadership.
+
